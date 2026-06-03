@@ -1,0 +1,34 @@
+
+config samba
+	option workgroup 'WORKGROUP'
+	option charset 'UTF-8'
+	option name 'zxh'
+	option description 'Samba'
+	option enabled '1'
+	option homes '1'
+	option macos '0'
+	option disable_async_io '1'
+	option enable_extra_tuning '1'
+	option allow_legacy_protocols '1'
+	option autoshare '0'
+
+config sambashare
+	option read_only '0'
+	option force_root '1'
+	option guest_ok '1'
+	option name 'mmcblk0p1'
+	option path '/mnt/mmcblk0p1'
+	option inherit_owner 'yes'
+	option create_mask '0666'
+	option dir_mask '0777'
+
+config sambashare
+	option read_only '0'
+	option force_root '1'
+	option guest_ok '1'
+	option name 'sda1'
+	option path '/mnt/sda1'
+	option inherit_owner 'yes'
+	option create_mask '0666'
+	option dir_mask '0777'
+
