@@ -4,22 +4,25 @@
 
 2. 命令行输入 `sudo apt-get update` ，然后输入
 `
-sudo apt-get -y install build-essential asciidoc binutils bzip2 curl gawk gettext git libncurses5-dev libz-dev patch python3 python2.7 python2 unzip zlib1g-dev lib32gcc1 libc6-dev-i386 subversion flex uglifyjs git-core gcc-multilib p7zip p7zip-full msmtp libssl-dev texinfo libglib2.0-dev xmlto qemu-utils upx libelf-dev autoconf automake libtool autopoint device-tree-compiler g++-multilib antlr3 gperf openssh-server
+sudo apt-get -y install build-essential asciidoc binutils bzip2 curl gawk gettext git libncurses5-dev libz-dev patch python3 python2 unzip zlib1g-dev lib32gcc1 libc6-dev-i386 subversion flex uglifyjs git-core gcc-multilib p7zip p7zip-full msmtp libssl-dev texinfo libglib2.0-dev xmlto qemu-utils upx libelf-dev autoconf automake libtool autopoint device-tree-compiler g++-multilib antlr3 gperf
+
+sudo apt-get install python2.7
+sudo apt-get install openssh-server
 `
 
-3. `git clone -b 19.07 --single-branch https://github.com/Lienol/openwrt openwrt19` 命令下载好源代码，然后 `cd openwrt19` 进入目录
+4. `git clone -b 19.07 --single-branch https://github.com/Lienol/openwrt openwrt19` 命令下载好源代码，然后 `cd openwrt19` 进入目录
 
-4. ```bash
+5. ```bash
    ./scripts/feeds clean
    ./scripts/feeds update -a
    ./scripts/feeds install -a
    make menuconfig
    ```
 
-5. `make -j8 download V=s` 下载dl库（国内请尽量全局科学上网）
+6. `make -j8 download V=s` 下载dl库（国内请尽量全局科学上网）
 
 
-6. 输入 `make -j1 V=s` （-j1 后面是线程数。第一次编译推荐用单线程）即可开始编译你要的固件了。
+7. 输入 `make -j1 V=s` （-j1 后面是线程数。第一次编译推荐用单线程）即可开始编译你要的固件了。
 
 6. 编译完成后输出路径：openwrt19/bin/targets
 
