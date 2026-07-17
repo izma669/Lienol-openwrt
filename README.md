@@ -47,6 +47,13 @@ binutils bzip2 diff find flex gawk gcc-6+ getopt grep install libc-dev libz-dev
 make4.1+ perl python3.7+ rsync subversion unzip which
 ```
 
+sudo apt update
+sudo apt full-upgrade -y
+sudo apt install build-essential libncurses5-dev libz-dev libssl-dev libelf-dev \
+    flex bison gawk gettext git git-core gcc-multilib g++-multilib \
+    python3 python3-distutils python3-dev rsync subversion unzip wget file \
+    time bc cpio parted dosfstools genisoimage xorriso
+
 ### Quickstart
 
 1. Run `./scripts/feeds update -a` to obtain all the latest package definitions
