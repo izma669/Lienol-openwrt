@@ -650,6 +650,17 @@ define Device/youhua_wr1200js
 endef
 TARGET_DEVICES += youhua_wr1200js
 
+
+define Device/youhua_wr330-32m
+  DTS := WR330-32M
+  IMAGE_SIZE := $(ralink_default_fw_size_32M)
+  DEVICE_TITLE := YouHua WR330-32M
+  DEVICE_PACKAGES := \
+	kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
+endef
+TARGET_DEVICES += youhua_wr330-32m
+
+
 define Device/youku_yk-l2
   DTS := YOUKU-YK2
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
