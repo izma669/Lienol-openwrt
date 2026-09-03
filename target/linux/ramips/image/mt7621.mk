@@ -735,6 +735,18 @@ define Device/comfast_cf-ew72-v2
 endef
 TARGET_DEVICES += comfast_cf-ew72-v2
 
+define Device/comfast_cf-ew84
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 16064k
+  DEVICE_VENDOR := COMFAST
+  DEVICE_MODEL := CF-EW84
+  DEVICE_ALT0_VENDOR := NEWFAST
+  DEVICE_ALT0_MODEL := NF-A882
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap kmod-ledtrig-network
+endef
+TARGET_DEVICES += comfast_cf-ew84
+
 define Device/confiabits_mt7621-v1
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
@@ -3112,6 +3124,18 @@ define Device/tplink_ec330-g5u-v1
 	append-ubi | check-size
 endef
 TARGET_DEVICES += tplink_ec330-g5u-v1
+
+define Device/tplink_er605-v1
+  DEVICE_VENDOR := TP-Link
+  DEVICE_MODEL := ER605
+  DEVICE_VARIANT := v1
+  DEVICE_ALT0_VENDOR := TP-Link
+  DEVICE_ALT0_MODEL := TL-R605
+  DEVICE_ALT0_VARIANT := v1
+  DEVICE_PACKAGES := -wpad-basic-mbedtls -uboot-envtools
+  IMAGE_SIZE := 13760k
+endef
+TARGET_DEVICES += tplink_er605-v1
 
 define Device/tplink_er605-v2
   $(Device/nand)

@@ -5,9 +5,9 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
-PKG_VERSION:=2025.10
+PKG_VERSION:=2026.07
 PKG_RELEASE:=1
-PKG_HASH:=b4f032848e56cc8f213ad59f9132c084dbbb632bc29176d024e58220e0efdf4a
+PKG_HASH:=78e8bfc382fe388f9b55aa1daf8c563522a037779b5d4c349d1415e381f1243e
 
 PKG_MAINTAINER:=Sarah Maedel <openwrt@tbspace.de>
 
@@ -272,6 +272,20 @@ define U-Boot/fastrhino-r66s-rk3568
     lunzn_fastrhino-r66s
 endef
 
+define U-Boot/hinlink-h66k-rk3568
+  $(U-Boot/rk3568/Default)
+  NAME:=HINLINK H66K
+  BUILD_DEVICES:= \
+    hinlink_h66k
+endef
+
+define U-Boot/hinlink-h68k-rk3568
+  $(U-Boot/rk3568/Default)
+  NAME:=HINLINK H68K
+  BUILD_DEVICES:= \
+    hinlink_h68k
+endef
+
 define U-Boot/nanopi-r5c-rk3568
   $(U-Boot/rk3568/Default)
   NAME:=NanoPi R5C
@@ -452,6 +466,8 @@ UBOOT_TARGETS := \
   bpi-r2-pro-rk3568 \
   easepi-r1-rk3568 \
   fastrhino-r66s-rk3568 \
+  hinlink-h66k-rk3568 \
+  hinlink-h68k-rk3568 \
   nanopi-r5c-rk3568 \
   nanopi-r5s-rk3568 \
   radxa-e25-rk3568 \
