@@ -46,17 +46,34 @@ generate_keys() {
 	config_get key_type   "$cfg" key_type
 	config_get ec_curve   "$cfg" ec_curve
 
-	# Prefer px5g for certificate generation (existence evaluated last)
+	# Prefer OpenSSL so the certificate can carry SAN entries
 	local GENKEY_CMD=""
 	local KEY_OPTS="rsa:${bits:-2048}"
+	local SAN=""
+	local CONF="${UHTTPD_CERT}.cnf"
+	local CONF_OPT=""
 	local UNIQUEID=$(dd if=/dev/urandom bs=1 count=4 | hexdump -e '1/1 "%02x"')
+	local lan_ip=$(uci -q get network.lan.ipaddr)
 	[ "$key_type" = "ec" ] && KEY_OPTS="ec -pkeyopt ec_paramgen_curve:${ec_curve:-P-256}"
-	[ -x "$OPENSSL_BIN" ] && GENKEY_CMD="$OPENSSL_BIN req -x509 -sha256 -outform der -nodes"
-	[ -x "$PX5G_BIN" ] && GENKEY_CMD="$PX5G_BIN selfsigned -der"
+	if [ -x "$OPENSSL_BIN" ]; then
+		GENKEY_CMD="$OPENSSL_BIN req -x509 -sha256 -outform der -nodes"
+		SAN="-addext subjectAltName=DNS:${commonname:-OpenWrt},DNS:localhost,IP:${lan_ip:-127.0.0.1},IP:127.0.0.1 -addext extendedKeyUsage=serverAuth -addext keyUsage=critical,digitalSignature,keyEncipherment -addext basicConstraints=critical,CA:FALSE"
+		CONF_OPT="-config $CONF"
+		cat > "$CONF" <<EOF
+[req]
+distinguished_name=dn
+prompt=no
+[dn]
+EOF
+	elif [ -x "$PX5G_BIN" ]; then
+		GENKEY_CMD="$PX5G_BIN selfsigned -der"
+	fi
 	[ -n "$GENKEY_CMD" ] && {
 		$GENKEY_CMD \
 			-days ${days:-730} -newkey ${KEY_OPTS} -keyout "${UHTTPD_KEY}.new" -out "${UHTTPD_CERT}.new" \
-			-subj /C="${country:-ZZ}"/ST="${state:-Somewhere}"/L="${location:-Unknown}"/O="${commonname:-OpenWrt}$UNIQUEID"/CN="${commonname:-OpenWrt}"
+			-subj /C="${country:-ZZ}"/ST="${state:-Somewhere}"/L="${location:-Unknown}"/O="${commonname:-OpenWrt}$UNIQUEID"/CN="${commonname:-OpenWrt}" \
+			$CONF_OPT $SAN
+		rm -f "$CONF"
 		sync
 		mv "${UHTTPD_KEY}.new" "${UHTTPD_KEY}"
 		mv "${UHTTPD_CERT}.new" "${UHTTPD_CERT}"
