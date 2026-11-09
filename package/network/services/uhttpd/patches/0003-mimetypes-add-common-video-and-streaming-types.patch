@@ -1,0 +1,25 @@
+mimetypes: add common video and streaming content types
+
+The MIME table in the 19.07/21.02 uhttpd only knows mpg, mpeg and avi,
+so .mp4 files are served as application/octet-stream.  Browsers then
+download them instead of playing them inline.  Add mp4, m4v, mkv,
+webm, mov, MPEG-TS and HLS playlist types so video files are served
+with a playable Content-Type.
+---
+
+--- a/mimetypes.h
++++ b/mimetypes.h
+@@ -78,6 +78,13 @@
+ 	{ "mpg",     "video/mpeg" },
+ 	{ "mpeg",    "video/mpeg" },
+ 	{ "avi",     "video/x-msvideo" },
++	{ "mp4",     "video/mp4" },
++	{ "m4v",     "video/x-m4v" },
++	{ "mkv",     "video/x-matroska" },
++	{ "webm",    "video/webm" },
++	{ "mov",     "video/quicktime" },
++	{ "ts",      "video/mp2t" },
++	{ "m3u8",    "application/vnd.apple.mpegurl" },
+ 
+ 	{ "README",  "text/plain" },
+ 	{ "log",     "text/plain" },
