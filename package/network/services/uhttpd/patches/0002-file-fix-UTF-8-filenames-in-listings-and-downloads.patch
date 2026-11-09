@@ -1,0 +1,203 @@
+file: fix UTF-8 file names in directory listings and downloads
+
+The directory listing was sent as "text/html" without a charset, so
+clients defaulted to ISO-8859-1 (or their local code page) and showed
+UTF-8 file names as mojibake.  Announce UTF-8 both in the Content-Type
+header and through a meta tag in the generated document.
+
+Percent-encode path segments in the links of the listing so that
+non-ASCII names, '#', '?' and spaces produce valid URLs.  Without this,
+clients that do not auto-encode raw UTF-8 bytes build broken requests,
+and '#' truncates the URL at the fragment.
+
+For non-ASCII file names also emit a Content-Disposition header with an
+RFC 5987 filename* parameter.  Download managers can then decode the
+name as UTF-8 instead of guessing the local code page; the quoted
+filename fallback keeps the raw UTF-8 bytes for older clients, with
+control characters, quotes and backslashes replaced by '_'.
+---
+
+--- a/file.c
++++ b/file.c
+@@ -386,6 +386,59 @@
+ 	ustream_printf(cl->us, "Content-Length: 0\r\n\r\n");
+ }
+ 
++static void uh_file_send_disposition(struct client *cl, const char *path)
++{
++	const char *name;
++	char *fallback = NULL, *encoded = NULL;
++	size_t len, i;
++	int out_len;
++	bool non_ascii = false;
++
++	name = strrchr(path, '/');
++	name = name ? name + 1 : path;
++	len = strlen(name);
++
++	if (!len)
++		return;
++
++	for (i = 0; i < len; i++) {
++		if ((unsigned char)name[i] >= 0x80) {
++			non_ascii = true;
++			break;
++		}
++	}
++
++	if (!non_ascii)
++		return;
++
++	fallback = malloc(len + 1);
++	encoded = malloc(len * 3 + 1);
++
++	if (!fallback || !encoded)
++		goto out;
++
++	for (i = 0; i < len; i++) {
++		unsigned char c = name[i];
++
++		fallback[i] = (c < 0x20 || c == 0x7f ||
++			       c == '"' || c == '\\') ? '_' : c;
++	}
++	fallback[len] = 0;
++
++	out_len = uh_urlencode(encoded, len * 3 + 1, name, len);
++	if (out_len < 0)
++		goto out;
++	encoded[out_len] = 0;
++
++	ustream_printf(cl->us,
++		"Content-Disposition: inline; filename=\"%s\"; filename*=UTF-8''%s\r\n",
++		fallback, encoded);
++
++out:
++	free(fallback);
++	free(encoded);
++}
++
+ static void uh_file_response_304(struct client *cl, struct stat *s)
+ {
+ 	uh_http_header(cl, 304, "Not Modified");
+@@ -514,6 +567,41 @@
+ 	return alphasort(a, b);
+ }
+ 
++static char *uh_file_urlencode(const char *str, bool path)
++{
++	size_t len = strlen(str);
++	char *encoded;
++	int out_len;
++
++	encoded = malloc(len * 3 + 1);
++	if (!encoded)
++		return NULL;
++
++	out_len = uh_urlencode(encoded, len * 3 + 1, str, len);
++	if (out_len < 0) {
++		free(encoded);
++		return NULL;
++	}
++	encoded[out_len] = 0;
++
++	if (path) {
++		char *src, *dst;
++
++		for (src = dst = encoded; *src; src++) {
++			if (src[0] == '%' && src[1] == '2' && src[2] == 'f') {
++				*dst++ = '/';
++				src += 2;
++			} else {
++				*dst++ = *src;
++			}
++		}
++
++		*dst = 0;
++	}
++
++	return encoded;
++}
++
+ static void list_entries(struct client *cl, struct dirent **files, int count,
+ 			 const char *path, char *local_path)
+ {
+@@ -522,6 +610,7 @@
+ 	unsigned int mode = S_IXOTH;
+ 	struct stat s;
+ 	char *escaped;
++	char *url_name;
+ 	char *file;
+ 	char buf[128];
+ 	int i;
+@@ -551,17 +640,25 @@
+ 
+ 		if (!escaped)
+ 			goto next;
++
++		url_name = uh_file_urlencode(name, false);
++
++		if (!url_name) {
++			free(escaped);
++			goto next;
++		}
+ 
+ 		uh_chunk_printf(cl,
+ 				"<li><strong><a href='%s%s%s'>%s</a>%s"
+ 				"</strong><br /><small>modified: %s"
+ 				"<br />%s - %.02f kbyte<br />"
+ 				"<br /></small></li>",
+-				path, escaped, suffix,
++				path, url_name, suffix,
+ 				escaped, suffix,
+ 				uh_file_unix2date(s.st_mtime, buf, sizeof(buf)),
+ 				type, s.st_size / 1024.0);
+ 
++		free(url_name);
+ 		free(escaped);
+ 		*file = 0;
+ next:
+@@ -573,27 +670,31 @@
+ {
+ 	struct dirent **files = NULL;
+ 	char *escaped_path = uh_htmlescape(pi->name);
++	char *url_path = uh_file_urlencode(pi->name, true);
+ 	int count = 0;
+ 
+ 	if (!escaped_path)
+ 	{
+ 		uh_client_error(cl, 500, "Internal Server Error", "Out of memory");
++		free(url_path);
+ 		return;
+ 	}
+ 
+ 	uh_file_response_200(cl, NULL);
+-	ustream_printf(cl->us, "Content-Type: text/html\r\n\r\n");
++	ustream_printf(cl->us, "Content-Type: text/html; charset=UTF-8\r\n\r\n");
+ 
+ 	uh_chunk_printf(cl,
+-		"<html><head><title>Index of %s</title></head>"
++		"<html><head><meta charset=\"utf-8\">"
++		"<title>Index of %s</title></head>"
+ 		"<body><h1>Index of %s</h1><hr /><ol>",
+ 		escaped_path, escaped_path);
+ 
+ 	count = scandir(pi->phys, &files, NULL, dirent_cmp);
+ 	if (count > 0) {
+ 		strcpy(uh_buf, pi->phys);
+-		list_entries(cl, files, count, escaped_path, uh_buf);
+-	}
++		list_entries(cl, files, count, url_path ? url_path : pi->name, uh_buf);
++	}
++	free(url_path);
+ 	free(escaped_path);
+ 	free(files);
+ 
+@@ -824,6 +925,8 @@
+ 	ustream_printf(cl->us, "Accept-Ranges: bytes\r\n");
+ 	ustream_printf(cl->us, "Content-Type: %s\r\n",
+ 			   uh_file_mime_lookup(pi->name));
++
++	uh_file_send_disposition(cl, pi->name);
+ 
+ 	ustream_printf(cl->us, "Content-Length: %" PRIu64 "\r\n\r\n", length);
+ 
