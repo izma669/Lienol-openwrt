@@ -12,6 +12,11 @@ endif
 include $(TOPDIR)/include/debug.mk
 include $(TOPDIR)/include/verbose.mk
 
+# Build the 18.06 (Legacy) variants of packages that were backported
+# to 19.07 - e.g. ksmbd 3.3.x, the last ksmbd release that still
+# compiles against the 4.14 kernel used by 19.07.
+LEGACY_1806:=1
+
 ifneq ($(filter check,$(MAKECMDGOALS)),)
 CHECK:=1
 DUMP:=1
